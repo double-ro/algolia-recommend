@@ -198,6 +198,11 @@
     <h1>Looking Similar Playground</h1>
 
     <div class="input-container">
+        <select id="indexSelect" class="input-field">
+            <option value="MP Groups - 3 Horizontal">MP Groups - 3 Horizontal</option>
+            <option value="MP Groups - 4 Mess">MP Groups - 4 Mess</option>
+            <option value="MP Groups - 5 Star">MP Groups - 5 Star</option>
+        </select>
         <input type="text" id="objectIdInput" placeholder="Enter SKU" class="input-field" />
         <button id="loadObjectBtn" class="load-button">
             Find similar products
@@ -231,13 +236,30 @@
     <script>
         const { carousel } = instantsearch.templates;
         const searchClient = algoliasearch('K2CTT24UP3', '1bf4da2313eba882ba9bd17a042eb8d0');
-        const indexName = 'MP Groups - 3 Horizontal';
-        const index = searchClient.initIndex(indexName);
 
-        const search = instantsearch({
-            searchClient,
-            indexName
-        });
+        let search;
+
+        function initSearch(indexName) {
+            // If search already exists, dispose it
+            if (search) {
+                search.dispose();
+            }
+            search = instantsearch({
+                searchClient,
+                indexName
+            });
+
+            // Reattach event listener after render
+            search.on('render', () => {
+                const checkboxes = document.querySelectorAll('.sku-checkbox');
+                checkboxes.forEach(cb => {
+                    cb.removeEventListener('change', updateSelectedSKUsDisplay);
+                    cb.addEventListener('change', updateSelectedSKUsDisplay);
+
+                });
+            });
+            search.start();
+        }
 
         let currentWidget = null;
 
@@ -248,10 +270,22 @@
             document.getElementById('selectedSKUsText').textContent = selectedSKUsText;
         }
 
-        function loadObjectAndRecommendations(objectID) {
+        function loadObjectAndRecommendations(objectID, indexName) {
+            const index = searchClient.initIndex(indexName);
             index.search('', {
                 filters: `objectID:${objectID}`,
             }).then(({ hits }) => {
+                // Clear previous content
+                document.getElementById('main-object').innerHTML = '';
+                document.getElementById('selectedSKUsText').textContent = 'No SKUs selected.';
+                document.getElementById('copySuccessMessage').style.display = 'none';
+                document.getElementById('recommend-container').style.border = 'none';
+
+                if (currentWidget) {
+                    search.removeWidgets([currentWidget]);
+                    currentWidget = null;
+                }
+
                 if (hits.length > 0) {
                     const mainObject = hits[0];
                     document.querySelector('#main-object').innerHTML = `
@@ -302,8 +336,11 @@
 
         document.getElementById('loadObjectBtn').addEventListener('click', () => {
             const objectID = document.getElementById('objectIdInput').value.trim();
+            const indexName = document.getElementById('indexSelect').value;
+
             if (objectID) {
-                loadObjectAndRecommendations(objectID);
+                initSearch(indexName);
+                loadObjectAndRecommendations(objectID, indexName);
             }
         });
 
