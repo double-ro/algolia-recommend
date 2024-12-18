@@ -315,6 +315,7 @@
                     search?.refresh();
                 };
                 reader.readAsText(file);
+                document.getElementById('selectedSKUsTitle').textContent = 'Currently Selected:';
             }
         });
 
@@ -350,9 +351,17 @@
 
         function updateSelectedSKUsDisplay() {
             const checkboxes = document.querySelectorAll('.sku-checkbox:checked');
-            const selectedSKUs = Array.from(checkboxes).map(cb => cb.value);
+            const checkboxesArray = Array.from(checkboxes);
+            const selectedSKUs = checkboxesArray.map(cb => cb.value);
             const selectedSKUsText = selectedSKUs.length > 0 ? selectedSKUs.join(', ') : 'No SKUs selected.';
             document.getElementById('selectedSKUsText').textContent = selectedSKUsText;
+
+            const titleElement = document.getElementById('selectedSKUsTitle');
+            if (checkboxesArray.length === 0) {
+                titleElement.textContent = `Currently Selected:`;
+            } else {
+                titleElement.textContent = `Currently Selected (${checkboxesArray.length})`;
+            }
         }
 
         function loadObjectAndRecommendations(objectID, indexName) {
@@ -362,6 +371,7 @@
             }).then(({ hits }) => {
                 // Clear previous content
                 document.getElementById('main-object').innerHTML = '';
+                document.getElementById('selectedSKUsTitle').textContent = 'Currently Selected:';
                 document.getElementById('selectedSKUsText').textContent = 'No SKUs selected.';
                 document.getElementById('copySuccessMessage').style.display = 'none';
                 document.getElementById('recommend-container').style.border = 'none';
@@ -435,8 +445,10 @@
         // Copy on click of selectedSKUsText
         document.getElementById('selectedSKUsText').addEventListener('click', () => {
             const textToCopy = document.getElementById('selectedSKUsText').textContent;
+
             if (textToCopy && textToCopy !== 'No SKUs selected.') {
-                navigator.clipboard.writeText(textToCopy)
+                const multilineText = textToCopy.split(', ').join('\n');
+                navigator.clipboard.writeText(multilineText)
                     .then(() => {
                         const message = document.getElementById('copySuccessMessage');
                         message.style.display = 'inline';
