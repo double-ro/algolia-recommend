@@ -70,6 +70,37 @@
         #recommend-container .ais-Carousel-list {
             scrollbar-width: initial;
             grid-auto-columns: 10%;
+            /* Default */
+        }
+
+        @media (max-width: 1444px) {
+            #recommend-container .ais-Carousel-list {
+                grid-auto-columns: 16.6666%;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            #recommend-container .ais-Carousel-list {
+                grid-auto-columns: 20%;
+            }
+        }
+
+        @media (max-width: 1000px) {
+            #recommend-container .ais-Carousel-list {
+                grid-auto-columns: 25%;
+            }
+        }
+
+        @media (max-width: 750px) {
+            #recommend-container .ais-Carousel-list {
+                grid-auto-columns: 33%;
+            }
+        }
+
+        @media (max-width: 500px) {
+            #recommend-container .ais-Carousel-list {
+                grid-auto-columns: 50%;
+            }
         }
 
         img {
@@ -178,7 +209,11 @@
             cursor: not-allowed;
         }
 
-        #selectedSKUsText:hover::after {
+        #selectedSKUsContainer {
+            position: relative;
+        }
+
+        #selectedSKUsContainer:hover #selectedSKUsText::after {
             content: "Copy to clipboard";
             position: absolute;
             bottom: 100%;
@@ -199,9 +234,10 @@
 
     <div class="input-container">
         <select id="indexSelect" class="input-field">
-            <option value="MP Groups - 3 Horizontal">MP Groups - 3 Horizontal</option>
-            <option value="MP Groups - 4 Mess">MP Groups - 4 Mess</option>
-            <option value="MP Groups - 5 Star">MP Groups - 5 Star</option>
+            <option value="groups-3_horizontal">3 Horizontal</option>
+            <option value="groups-4_mess">4 Mess</option>
+            <option value="groups-5_star">5 Star</option>
+            <option value="groups-3_bow_horizontal">3 Bow Horizontal</option>
         </select>
         <input type="text" id="objectIdInput" placeholder="Enter SKU" class="input-field" />
         <button id="loadObjectBtn" class="load-button">
@@ -235,7 +271,7 @@
 
     <script>
         const { carousel } = instantsearch.templates;
-        const searchClient = algoliasearch('K2CTT24UP3', '1bf4da2313eba882ba9bd17a042eb8d0');
+        const searchClient = algoliasearch('VN82HNKNB5', '0716b07ebd8b4ae98afd3f2477fac770');
 
         let search;
 
@@ -257,6 +293,12 @@
                     cb.addEventListener('change', updateSelectedSKUsDisplay);
 
                 });
+
+                const itemsCount = document.querySelectorAll('.ais-LookingSimilar-item').length;
+                const titleElement = document.querySelector('.ais-LookingSimilar-title');
+                if (titleElement) {
+                    titleElement.textContent = `Looking similar (${itemsCount})`;
+                }
             });
             search.start();
         }
@@ -362,16 +404,6 @@
             }
         });
 
-        // Attach a listener to the 'render' event to reattach checkbox listeners after each render
-        search.on('render', () => {
-            const checkboxes = document.querySelectorAll('.sku-checkbox');
-            checkboxes.forEach(cb => {
-                cb.removeEventListener('change', updateSelectedSKUsDisplay);
-                cb.addEventListener('change', updateSelectedSKUsDisplay);
-            });
-        });
-
-        search.start();
     </script>
 </body>
 
