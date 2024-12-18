@@ -226,6 +226,20 @@
             font-size: 12px;
             white-space: nowrap;
         }
+
+        #loadCsvBtn {
+            padding: 5px 10px;
+            border: 1px solid #aaa;
+            border-radius: 3px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        #loadCsvBtn:hover {
+            background: #eee;
+        }
     </style>
 </head>
 
@@ -243,6 +257,11 @@
         <button id="loadObjectBtn" class="load-button">
             Find similar products
         </button>
+        <input type="file" id="csvInput" accept=".csv" style="display:none;">
+    </div>
+
+    <div class="csv-input-container">
+        <button id="loadCsvBtn">Exclude SKUs</button>
     </div>
 
     <div id="main-object" style="margin:20px 0;">
@@ -274,6 +293,30 @@
         const searchClient = algoliasearch('VN82HNKNB5', '0716b07ebd8b4ae98afd3f2477fac770');
 
         let search;
+        let excludedSkus = [];
+
+        const csvInput = document.getElementById('csvInput');
+        const loadCsvBtn = document.getElementById('loadCsvBtn');
+
+        loadCsvBtn.addEventListener('click', () => {
+            csvInput.click(); // open file chooser
+        });
+
+        csvInput.addEventListener('change', () => {
+            const file = csvInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const csvText = e.target.result;
+                    excludedSkus = csvText.split('\n').map(line => line.trim()).filter(Boolean);
+                    // console.log('excluded skus:', excludedSkus);
+
+                    // Now that excludedSkus is updated, refresh search
+                    search?.refresh();
+                };
+                reader.readAsText(file);
+            }
+        });
 
         function initSearch(indexName) {
             // If search already exists, dispose it
@@ -346,6 +389,9 @@
                 currentWidget = instantsearch.widgets.lookingSimilar({
                     container: '#recommend-container',
                     objectIDs: [objectID],
+                    transformItems(items) {
+                        return items.filter(item => !excludedSkus.includes(item.SKU));
+                    },
                     templates: {
                         item(recommendation, { html }) {
                             return html`
