@@ -243,6 +243,53 @@
         #loadCsvBtn:hover {
             background: #eee;
         }
+
+        .exclusion-controls {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: #f5f5f5;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .exclusion-controls #loadCsvBtn,
+        .exclusion-controls #clearExclusionBtn {
+            padding: 5px 10px;
+            border: 1px solid #aaa;
+            border-radius: 3px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .exclusion-controls #clearExclusionBtn {
+            display: none;
+        }
+
+        .exclusion-controls #loadCsvBtn:hover,
+        .exclusion-controls #clearExclusionBtn:hover {
+            background: #eee;
+        }
+
+        .exclusion-controls #excludedFileName {
+            font-size: 13px;
+            color: #594444;
+            background: #d1d1b3;
+            padding: 5px;
+            border-radius: 10px;
+            max-width: 500px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: none;
+        }
+
+        /* .exclusion-controls #excludedFileName {
+            display: inline-block;
+        } */
     </style>
 </head>
 
@@ -281,8 +328,12 @@
         <input type="file" id="csvInput" accept=".csv" style="display:none;">
     </div>
 
-    <div class="csv-input-container">
+    <br>
+
+    <div class="exclusion-controls">
         <button id="loadCsvBtn">Exclude SKUs</button>
+        <span id="excludedFileName"></span>
+        <button id="clearExclusionBtn">Clear Exclusion</button>
     </div>
 
     <div id="main-object" style="margin:20px 0;">
@@ -315,9 +366,31 @@
 
         let search;
         let excludedSkus = [];
+        let excludedFileName = '';
+
+        // Load from localStorage on init
+        const savedExclusions = localStorage.getItem('excludedSkusData');
+        if (savedExclusions) {
+            const parsed = JSON.parse(savedExclusions);
+            excludedSkus = parsed.skus || [];
+            excludedFileName = parsed.filename || '';
+        }
+
+        if (excludedFileName) {
+            document.getElementById('excludedFileName').textContent = excludedFileName;
+        }
+
+        // Refresh search if needed, since we might have excluded skus from previous session
+        if (excludedSkus.length > 0) {
+            document.getElementById('excludedFileName').textContent = excludedFileName;
+            document.getElementById('excludedFileName').style.display = 'inline-block';
+            document.getElementById('clearExclusionBtn').style.display = 'inline-block';
+            search?.refresh();
+        }
 
         const csvInput = document.getElementById('csvInput');
         const loadCsvBtn = document.getElementById('loadCsvBtn');
+        const clearExclusionBtn = document.getElementById('clearExclusionBtn');
 
         loadCsvBtn.addEventListener('click', () => {
             csvInput.click(); // open file chooser
@@ -331,13 +404,36 @@
                     const csvText = e.target.result;
                     excludedSkus = csvText.split('\n').map(line => line.trim()).filter(Boolean);
                     // console.log('excluded skus:', excludedSkus);
+                    excludedFileName = file.name;
+
+                    // Save to localStorage
+                    localStorage.setItem('excludedSkusData', JSON.stringify({
+                        skus: excludedSkus,
+                        filename: excludedFileName
+                    }));
+
+                    // Update UI
+                    document.getElementById('excludedFileName').textContent = excludedFileName;
+                    document.getElementById('selectedSKUsTitle').textContent = 'Currently Selected:';
+                    document.getElementById('excludedFileName').style.display = 'inline-block';
+                    document.getElementById('clearExclusionBtn').style.display = 'inline-block';
 
                     // Now that excludedSkus is updated, refresh search
                     search?.refresh();
                 };
                 reader.readAsText(file);
-                document.getElementById('selectedSKUsTitle').textContent = 'Currently Selected:';
             }
+        });
+
+        clearExclusionBtn.addEventListener('click', () => {
+            excludedSkus = [];
+            excludedFileName = '';
+            localStorage.removeItem('excludedSkusData');
+            document.getElementById('excludedFileName').textContent = '';
+            document.getElementById('excludedFileName').style.display = 'none';
+            document.getElementById('clearExclusionBtn').style.display = 'none';
+            // Refresh search to remove exclusion filters
+            search?.refresh();
         });
 
         function initSearch(indexName) {
